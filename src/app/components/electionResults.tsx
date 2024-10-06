@@ -92,7 +92,7 @@ export default function ElectionResults() {
               id: candidate.sqcand,
               nomeUrna: candidate.nmu,
               partido: par.sg,
-              votos: Math.floor(Math.random() * 10000),
+              votos: parseInt(candidate.vap),//Math.floor(Math.random() * 10000),
               percentual: parseFloat(candidate.pvap),
               foto: `https://resultados.tse.jus.br/oficial/ele2024/619/fotos/${city.state.toLowerCase()}/${
                 candidate.sqcand
