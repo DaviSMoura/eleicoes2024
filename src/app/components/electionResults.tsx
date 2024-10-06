@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { X, Loader2, RefreshCw } from "lucide-react"
-import { List as VirtualizedList } from "react-virtualized"
+import { List as VirtualizedList, AutoSizer } from "react-virtualized"
 import cities from "@/lib/cities"
 
 interface Candidate {
@@ -53,7 +53,6 @@ export default function ElectionResults() {
 
   const filteredCities = useMemo(() => {
     return cities.filter((city) =>
-      // city.name.toLowerCase().includes(citySearch.toLowerCase()) ||
       city.state.toLowerCase().includes(citySearch.toLowerCase()),
     )
   }, [citySearch])
@@ -291,6 +290,28 @@ export default function ElectionResults() {
     }
   }
 
+  const renderCandidateList = useCallback(({ index, key, style, data }) => {
+    const candidate = data[index]
+    return (
+      <div key={key} style={style} className="flex items-center space-x-2 py-2">
+        <Image
+          src={candidate.foto}
+          alt={candidate.nomeUrna}
+          width={40}
+          height={40}
+          className="rounded-full"
+        />
+        <div>
+          <div className="font-semibold">{candidate.nomeUrna}</div>
+          <div className="text-sm text-muted-foreground">
+            {candidate.partido} - {candidate.votos} votos (
+            {candidate.percentual.toFixed(2)}%)
+          </div>
+        </div>
+      </div>
+    )
+  }, [])
+
   return (
     <div className="flex flex-col min-h-screen">
       <div className="p-4 py-0 border-b">
@@ -353,7 +374,7 @@ export default function ElectionResults() {
       )}
       {error && <div className="text-red-500 p-4">{error}</div>}
       <ScrollArea className="flex-1">
-        <div className="flex p-4 space-x-4 md:flex-nowrap sm:flex-wrap">
+        <div className="flex p-4 space-x-4 md:flex-nowrap sm:flex-wrap overflow-x-auto md:overflow-x-hidden">
           {sections.map((section) => (
             <Card
               key={section.id}
@@ -378,7 +399,6 @@ export default function ElectionResults() {
                     <TabsTrigger value="prefeito">Prefeito</TabsTrigger>
                   </TabsList>
                   <TabsContent value="vereador">
-                    {" "}
                     <div className="mb-1">
                       <span className="font-semibold">
                         Seções totalizadas:{" "}
@@ -419,40 +439,46 @@ export default function ElectionResults() {
                         }
                       />
                     </div>
-                    <ScrollArea className="h-[400px] mt-2">
-                      {section.vereadores
-                        .filter(
+                    <div className="h-[400px] mt-2">
+                      <AutoSizer>
+                        {({ height, width }) => (
+                          <VirtualizedList
+                            width={width}
+                            height={height}
+                            rowCount={
+                              section.vereadores.filter(
+                                (candidate) =>
+                                  (!section.partyFilter ||
+                                    candidate.partido ===
+                                      section.partyFilter) &&
+                                  candidate.nomeUrna
+                                    .toLowerCase()
+                                    .includes(
+                                      section.candidateSearch.toLowerCase(),
+                                    ),
+                              ).length
+                            }
+                            rowHeight={60}
+                            rowRenderer={(props) =>
+                              renderCandidateList({
+                                ...props,
+                                data: section.vereadores.filter(
                           (candidate) =>
                             (!section.partyFilter ||
-                              candidate.partido === section.partyFilter) &&
+                                      candidate.partido ===
+                                        section.partyFilter) &&
                             candidate.nomeUrna
                               .toLowerCase()
-                              .includes(section.candidateSearch.toLowerCase()),
-                        )
-                        .map((candidate) => (
-                          <div
-                            key={candidate.id}
-                            className="flex items-center space-x-2 py-2"
-                          >
-                            <Image
-                              src={candidate.foto}
-                              alt={candidate.nomeUrna}
-                              width={40}
-                              height={40}
-                              className="rounded-full"
-                            />
-                            <div>
-                              <div className="font-semibold">
-                                {candidate.nomeUrna}
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                {candidate.partido} - {candidate.votos} votos (
-                                {candidate.percentual.toFixed(2)}%)
-                              </div>
-                            </div>
+                                      .includes(
+                                        section.candidateSearch.toLowerCase(),
+                                      ),
+                                ),
+                              })
+                            }
+                          />
+                        )}
+                      </AutoSizer>
                           </div>
-                        ))}
-                    </ScrollArea>
                   </TabsContent>
                   <TabsContent value="prefeito">
                     <div className="mb-1">
@@ -464,31 +490,24 @@ export default function ElectionResults() {
                     <span className="font-semibold">Última Atualização: </span>
                     {section.lastUpdatePrefeito}
                     <div className="mb-4"></div>
-                    <ScrollArea className="h-[400px]">
-                      {section.prefeitos.map((candidate) => (
-                        <div
-                          key={candidate.id}
-                          className="flex items-center space-x-2 py-2"
-                        >
-                          <Image
-                            src={candidate.foto}
-                            alt={candidate.nomeUrna}
-                            width={40}
-                            height={40}
-                            className="rounded-full"
+                    <div className="h-[400px]">
+                      <AutoSizer>
+                        {({ height, width }) => (
+                          <VirtualizedList
+                            width={width}
+                            height={height}
+                            rowCount={section.prefeitos.length}
+                            rowHeight={60}
+                            rowRenderer={(props) =>
+                              renderCandidateList({
+                                ...props,
+                                data: section.prefeitos,
+                              })
+                            }
                           />
-                          <div>
-                            <div className="font-semibold">
-                              {candidate.nomeUrna}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {candidate.partido} - {candidate.votos} votos (
-                              {candidate.percentual.toFixed(2)}%)
-                            </div>
-                          </div>
+                        )}
+                      </AutoSizer>
                         </div>
-                      ))}
-                    </ScrollArea>
                   </TabsContent>
                 </Tabs>
                 <div className="mt-4">
