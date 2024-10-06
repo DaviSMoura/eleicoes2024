@@ -522,23 +522,8 @@ export default function ElectionResults() {
                             width={width}
                             height={height}
                             rowCount={
-                              section.vereadores.filter(
-                                (candidate) =>
-                                  (!section.partyFilter ||
-                                    candidate.partido ===
-                                      section.partyFilter) &&
-                                  candidate.nomeUrna
-                                    .toLowerCase()
-                                    .includes(
-                                      section.candidateSearch.toLowerCase(),
-                                    ),
-                              ).length
-                            }
-                            rowHeight={60}
-                            rowRenderer={(props) =>
-                              renderCandidateList({
-                                ...props,
-                                data: section.vereadores.filter(
+                              section.vereadores
+                                .filter(
                                   (candidate) =>
                                     (!section.partyFilter ||
                                       candidate.partido ===
@@ -548,7 +533,26 @@ export default function ElectionResults() {
                                       .includes(
                                         section.candidateSearch.toLowerCase(),
                                       ),
-                                ),
+                                )
+                                .sort((a, b) => b.votos - a.votos).length
+                            }
+                            rowHeight={60}
+                            rowRenderer={(props) =>
+                              renderCandidateList({
+                                ...props,
+                                data: section.vereadores
+                                  .filter(
+                                    (candidate) =>
+                                      (!section.partyFilter ||
+                                        candidate.partido ===
+                                          section.partyFilter) &&
+                                      candidate.nomeUrna
+                                        .toLowerCase()
+                                        .includes(
+                                          section.candidateSearch.toLowerCase(),
+                                        ),
+                                  )
+                                  .sort((a, b) => b.votos - a.votos),
                               })
                             }
                           />
@@ -591,8 +595,9 @@ export default function ElectionResults() {
                     Quociente Eleitoral (Vereadores)
                   </h3>
                   <ScrollArea className="h-[200px] mt-2">
-                    {calculateQuocienteEleitoral(section).map(
-                      (result, index) => (
+                    {calculateQuocienteEleitoral(section)
+                      .sort((a, b) => b.seats - a.seats)
+                      .map((result, index) => (
                         <div key={index} className="flex justify-between py-1">
                           <span>{result.party}</span>
                           <span>
@@ -600,8 +605,7 @@ export default function ElectionResults() {
                             votos)
                           </span>
                         </div>
-                      ),
-                    )}
+                      ))}
                   </ScrollArea>
                 </div>
               </CardContent>
