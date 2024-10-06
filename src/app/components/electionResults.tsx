@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import Image from "next/image"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -45,6 +45,8 @@ export default function ElectionResults() {
   const [citySearch, setCitySearch] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isSelectOpen, setIsSelectOpen] = useState(false)
+  const citySearchInputRef = useRef<HTMLInputElement>(null)
 
   const filteredCities = useMemo(() => {
     return cities.filter(
@@ -154,6 +156,7 @@ export default function ElectionResults() {
   const addSection = (cityId: string) => {
     fetchElectionData(cityId)
     setCitySearch("")
+    setIsSelectOpen(false)
   }
 
   const deleteSection = (sectionId: number) => {
@@ -256,43 +259,58 @@ export default function ElectionResults() {
     )
   }
 
+  const handleCitySearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCitySearch(e.target.value)
+    if (citySearchInputRef.current) {
+      citySearchInputRef.current.focus()
+    }
+  }
+
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col min-h-screen">
       <div className="p-4 border-b">
-        <div className="flex items-center space-x-6">
+        <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6">
           <Image
             src="https://upload.wikimedia.org/wikipedia/commons/3/32/Movimento_Brasil_Livre_logo.svg"
             width={150}
             height={150}
             alt="MBL"
+            className="w-24 h-24 md:w-32 md:h-32"
           />
-          <h2 className="font-semibold text-3xl">
+          <h2 className="font-semibold text-2xl md:text-3xl text-center md:text-left">
             Apuração Eleitoral - Eleições 2024
           </h2>
-          <Select onValueChange={addSection}>
-            <SelectTrigger className="w-[300px]">
-              <SelectValue placeholder="Adicionar cidade" />
-            </SelectTrigger>
-            <SelectContent>
-              <Input
-                placeholder="Pesquisar cidade..."
-                value={citySearch}
-                onChange={(e) => setCitySearch(e.target.value)}
-                className="mb-2"
-              />
-              <VirtualizedList
-                width={300}
-                height={200}
-                rowCount={filteredCities.length}
-                rowHeight={35}
-                rowRenderer={renderCity}
-              />
-            </SelectContent>
-          </Select>
-          <Button onClick={forceUpdate}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Atualizar Dados
-          </Button>
+          <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 w-full md:w-auto">
+            <Select
+              onValueChange={addSection}
+              open={isSelectOpen}
+              onOpenChange={setIsSelectOpen}
+            >
+              <SelectTrigger className="w-full md:w-[300px]">
+                <SelectValue placeholder="Adicionar cidade" />
+              </SelectTrigger>
+              <SelectContent>
+                <Input
+                  placeholder="Pesquisar cidade..."
+                  value={citySearch}
+                  onChange={handleCitySearchChange}
+                  className="mb-2"
+                  ref={citySearchInputRef}
+                />
+                <VirtualizedList
+                  width={300}
+                  height={200}
+                  rowCount={filteredCities.length}
+                  rowHeight={35}
+                  rowRenderer={renderCity}
+                />
+              </SelectContent>
+            </Select>
+            <Button onClick={forceUpdate} className="w-full md:w-auto">
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Atualizar Dados
+            </Button>
+          </div>
         </div>
       </div>
       {loading && (
@@ -303,11 +321,11 @@ export default function ElectionResults() {
       )}
       {error && <div className="text-red-500 p-4">{error}</div>}
       <ScrollArea className="flex-1">
-        <div className="flex p-4 space-x-4">
+        <div className="flex flex-wrap p-4 gap-4">
           {sections.map((section) => (
-            <Card key={section.id} className="w-[400px] flex-shrink-0">
+            <Card key={section.id} className="w-full md:w-[400px] flex-shrink-0">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-2xl">
+                <CardTitle className="text-xl md:text-2xl">
                   {section.city} - {section.state}
                 </CardTitle>
                 <Button
@@ -414,7 +432,7 @@ export default function ElectionResults() {
                               {candidate.nomeUrna}
                             </div>
                             <div className="text-sm text-muted-foreground">
-                              {candidate.partido} - {candidate.votos} votos (
+                              {candidate.partido} - {candidate.votos} votes (
                               {candidate.percentual.toFixed(2)}%)
                             </div>
                           </div>
