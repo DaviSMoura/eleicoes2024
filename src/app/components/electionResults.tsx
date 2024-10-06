@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react"
 import Image from "next/image"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -302,7 +302,7 @@ export default function ElectionResults() {
         </div>
       )}
       {error && <div className="text-red-500 p-4">{error}</div>}
-      <ScrollArea className="flex-1 whitespace-nowrap">
+      <ScrollArea className="flex-1">
         <div className="flex p-4 space-x-4">
           {sections.map((section) => (
             <Card key={section.id} className="w-[400px] flex-shrink-0">
@@ -414,7 +414,7 @@ export default function ElectionResults() {
                               {candidate.nomeUrna}
                             </div>
                             <div className="text-sm text-muted-foreground">
-                              {candidate.partido} - {candidate.votos} votes (
+                              {candidate.partido} - {candidate.votos} votos (
                               {candidate.percentual.toFixed(2)}%)
                             </div>
                           </div>
@@ -445,6 +445,7 @@ export default function ElectionResults() {
             </Card>
           ))}
         </div>
+        <ScrollBar orientation="horizontal" />
       </ScrollArea>
     </div>
   )
