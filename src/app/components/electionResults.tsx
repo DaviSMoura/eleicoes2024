@@ -272,12 +272,12 @@ export default function ElectionResults() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <div className="p-4 border-b">
+      <div className="p-4 py-0 border-b">
         <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6">
           <Image
             src="https://upload.wikimedia.org/wikipedia/commons/3/32/Movimento_Brasil_Livre_logo.svg"
-            width={150}
-            height={150}
+            width={100}
+            height={100}
             alt="MBL"
             className="w-24 h-24 md:w-32 md:h-32"
           />
