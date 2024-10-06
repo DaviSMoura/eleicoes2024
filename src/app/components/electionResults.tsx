@@ -38,6 +38,7 @@ interface Section {
   lastUpdateVereador: string
   lastUpdatePrefeito: string
   candidateSearch: string
+  seats: number
   partyFilter: string | null
 }
 
@@ -84,7 +85,8 @@ export default function ElectionResults() {
         prefeitoResponse.json(),
       ])
 
-      seatsPerCity[cityId] = vereadorData.carg[0].nv
+      const totalSeats = vereadorData.carg[0].nv
+      seatsPerCity[cityId] = totalSeats
 
       const vereadores = vereadorData.carg.flatMap((carg: any) =>
         carg.agr.flatMap((agr: any) =>
@@ -137,6 +139,7 @@ export default function ElectionResults() {
                   percentTotalizedVereador,
                   percentTotalizedPrefeito,
                   lastUpdateVereador,
+                  seats: totalSeats,
                   lastUpdatePrefeito,
                 }
               : s,
@@ -155,6 +158,7 @@ export default function ElectionResults() {
               candidateSearch: "",
               lastUpdateVereador,
               lastUpdatePrefeito,
+              seats: totalSeats,
               partyFilter: null,
             },
           ]
@@ -180,43 +184,120 @@ export default function ElectionResults() {
     )
   }
 
-  const calculateQuocienteEleitoral = useCallback((section: Section) => {
-    const candidates = section.vereadores
-    const totalVotes = candidates.reduce(
-      (sum, candidate) => sum + candidate.votos,
-      0,
-    )
-    const city = cities.find((c) => c.name === section.city)
-    const totalSeats = city ? seatsPerCity[city.id] : 0
-    const electoralQuotient = Math.floor(totalVotes / totalSeats)
+  // const calculateQuocienteEleitoral = useCallback((section: Section) => {
+  //   const candidates = section.vereadores
+  //   const totalVotes = candidates.reduce(
+  //     (sum, candidate) => sum + candidate.votos,
+  //     0,
+  //   )
+  //   const city = cities.find((c) => c.name === section.city)
+  //   const totalSeats = city ? seatsPerCity[city.id] : 0
+  //   const electoralQuotient = Math.floor(totalVotes / totalSeats)
 
-    const partyVotes = Array.from(
-      new Set(candidates.map((c) => c.partido)),
-    ).map((party) => ({
-      party,
-      votes: candidates
-        .filter((c) => c.partido === party)
-        .reduce((sum, c) => sum + c.votos, 0),
-      seats: 0,
-    }))
+  //   const partyVotes = Array.from(
+  //     new Set(candidates.map((c) => c.partido)),
+  //   ).map((party) => ({
+  //     party,
+  //     votes: candidates
+  //       .filter((c) => c.partido === party)
+  //       .reduce((sum, c) => sum + c.votos, 0),
+  //     seats: 0,
+  //   }))
 
-    // First distribution of seats
-    partyVotes.forEach((pv) => {
-      pv.seats = Math.floor(pv.votes / electoralQuotient)
+  //   // First distribution of seats
+  //   partyVotes.forEach((pv) => {
+  //     pv.seats = Math.floor(pv.votes / electoralQuotient)
+  //   })
+
+  //   // Distribute remaining seats
+  //   let remainingSeats =
+  //     totalSeats - partyVotes.reduce((sum, pv) => sum + pv.seats, 0)
+  //   while (remainingSeats > 0) {
+  //     const sortedParties = [...partyVotes].sort(
+  //       (a, b) => b.votes / (b.seats + 1) - a.votes / (a.seats + 1),
+  //     )
+  //     sortedParties[0].seats += 1
+  //     remainingSeats -= 1
+  //   }
+
+  //   console.log("Cálculo do Quociente Eleitoral", {
+  //     input: section,
+  //     output: partyVotes,
+  //   })
+
+  //   return partyVotes.sort((a, b) => b.seats - a.seats)
+  // }, [])
+  const calculateQuocienteEleitoral = useCallback((electionData: Section) => {
+    const totalSeats = electionData.seats
+
+    // Cálculo do total de votos válidos somando os votos de todos os candidatos a vereador
+    let totalValidVotes = 0
+    electionData.vereadores.forEach((candidate) => {
+      totalValidVotes += candidate.votos
     })
 
-    // Distribute remaining seats
-    let remainingSeats =
-      totalSeats - partyVotes.reduce((sum, pv) => sum + pv.seats, 0)
-    while (remainingSeats > 0) {
-      const sortedParties = [...partyVotes].sort(
-        (a, b) => b.votes / (b.seats + 1) - a.votes / (a.seats + 1),
-      )
-      sortedParties[0].seats += 1
-      remainingSeats -= 1
+    // Cálculo do Quociente Eleitoral (QE)
+    const electoralQuotient = Math.floor(totalValidVotes / totalSeats)
+
+    // Mapear votos dos partidos
+    const partyVotes = {}
+    electionData.vereadores.forEach((candidate) => {
+      if (!partyVotes[candidate.partido]) {
+        partyVotes[candidate.partido] = 0
+      }
+      partyVotes[candidate.partido] += candidate.votos
+    })
+
+    // Cálculo do Quociente Partidário (QP) e distribuição inicial de cadeiras
+    const partyResults = []
+    let totalSeatsDistributed = 0
+
+    for (let party in partyVotes) {
+      const votes = partyVotes[party]
+      const seats = Math.floor(votes / electoralQuotient)
+      totalSeatsDistributed += seats
+
+      partyResults.push({
+        party: party,
+        votes: votes,
+        seats: seats,
+      })
     }
 
-    return partyVotes.sort((a, b) => b.seats - a.seats)
+    // Distribuição de sobras de cadeiras
+    const remainingSeats = totalSeats - totalSeatsDistributed
+    if (remainingSeats > 0) {
+      for (let i = 0; i < remainingSeats; i++) {
+        let highestMedia = 0
+        let selectedParty = null
+
+        partyResults.forEach((party) => {
+          const media = party.votes / (party.seats + 1)
+          if (media > highestMedia) {
+            highestMedia = media
+            selectedParty = party
+          }
+        })
+
+        if (selectedParty) {
+          selectedParty.seats += 1
+        }
+      }
+    }
+
+    // Retorno final com o número de cadeiras distribuídas por partido
+    const results = partyResults.map((result) => ({
+      party: result.party,
+      votes: result.votes,
+      seats: result.seats,
+    }))
+
+    console.log("Cálculo do Quociente Eleitoral", {
+      input: electionData,
+      output: results,
+    })
+
+    return results
   }, [])
 
   useEffect(() => {
