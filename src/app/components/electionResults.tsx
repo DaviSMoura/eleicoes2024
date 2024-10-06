@@ -39,6 +39,7 @@ interface Section {
   lastUpdatePrefeito: string
   candidateSearch: string
   seats: number
+  validVotesPerParty: Record<string, number>
   partyFilter: string | null
 }
 
@@ -88,10 +89,14 @@ export default function ElectionResults() {
       const totalSeats = vereadorData.carg[0].nv
       seatsPerCity[cityId] = totalSeats
 
+      const validVotesPerParty = {}
       const vereadores = vereadorData.carg.flatMap((carg: any) =>
         carg.agr.flatMap((agr: any) =>
-          agr.par.flatMap((par: any) =>
-            par.cand.map((candidate: any) => ({
+          agr.par.flatMap((par: any) => {
+            if (!validVotesPerParty[par.sg]) {
+              validVotesPerParty[par.sg] = parseInt(par.tvan) + parseInt(par.tvtl)
+            }
+            return par.cand.map((candidate: any) => ({
               id: candidate.sqcand,
               nomeUrna: candidate.nmu,
               partido: par.sg,
@@ -100,8 +105,8 @@ export default function ElectionResults() {
               foto: `https://resultados.tse.jus.br/oficial/ele2024/619/fotos/${city.state.toLowerCase()}/${
                 candidate.sqcand
               }.jpeg`,
-            })),
-          ),
+            }))
+          }),
         ),
       )
 
@@ -140,6 +145,7 @@ export default function ElectionResults() {
                   percentTotalizedPrefeito,
                   lastUpdateVereador,
                   seats: totalSeats,
+                  validVotesPerParty,
                   lastUpdatePrefeito,
                 }
               : s,
@@ -155,6 +161,7 @@ export default function ElectionResults() {
               prefeitos,
               percentTotalizedVereador,
               percentTotalizedPrefeito,
+              validVotesPerParty,
               candidateSearch: "",
               lastUpdateVereador,
               lastUpdatePrefeito,
@@ -232,21 +239,27 @@ export default function ElectionResults() {
 
     // Cálculo do total de votos válidos somando os votos de todos os candidatos a vereador
     let totalValidVotes = 0
-    electionData.vereadores.forEach((candidate) => {
-      totalValidVotes += candidate.votos
-    })
+    // electionData.vereadores.forEach((candidate) => {
+    //   totalValidVotes += candidate.votos
+    // })
+    for (let party in electionData.validVotesPerParty) {
+      totalValidVotes += electionData.validVotesPerParty[party]
+    }
 
     // Cálculo do Quociente Eleitoral (QE)
     const electoralQuotient = Math.floor(totalValidVotes / totalSeats)
 
     // Mapear votos dos partidos
     const partyVotes = {}
-    electionData.vereadores.forEach((candidate) => {
-      if (!partyVotes[candidate.partido]) {
-        partyVotes[candidate.partido] = 0
-      }
-      partyVotes[candidate.partido] += candidate.votos
-    })
+    // electionData.vereadores.forEach((candidate) => {
+    //   if (!partyVotes[candidate.partido]) {
+    //     partyVotes[candidate.partido] = 0
+    //   }
+    //   partyVotes[candidate.partido] += candidate.votos
+    // })
+    for (let party in electionData.validVotesPerParty) {
+      partyVotes[party] = electionData.validVotesPerParty[party]
+    }
 
     // Cálculo do Quociente Partidário (QP) e distribuição inicial de cadeiras
     const partyResults = []
