@@ -190,13 +190,6 @@ export default function ElectionResults() {
     const totalSeats = city ? seatsPerCity[city.id] : 0
     const electoralQuotient = Math.floor(totalVotes / totalSeats)
 
-    console.log("Sobre o quociente eleitoral da cidade", section.city, ":", {
-      totalVotes,
-      totalSeats,
-      electoralQuotient,
-      seatsPerCity,
-    })
-
     const partyVotes = Array.from(
       new Set(candidates.map((c) => c.partido)),
     ).map((party) => ({
@@ -294,7 +287,7 @@ export default function ElectionResults() {
     const candidate = data[index]
     return (
       <div key={key} style={style} className="flex items-center space-x-2 py-2">
-        <Image
+        <img
           src={candidate.foto}
           alt={candidate.nomeUrna}
           width={40}
@@ -316,7 +309,7 @@ export default function ElectionResults() {
     <div className="flex flex-col min-h-screen">
       <div className="p-4 py-0 border-b">
         <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6">
-          <Image
+          <img
             src="https://upload.wikimedia.org/wikipedia/commons/3/32/Movimento_Brasil_Livre_logo.svg"
             width={100}
             height={100}
@@ -463,12 +456,12 @@ export default function ElectionResults() {
                               renderCandidateList({
                                 ...props,
                                 data: section.vereadores.filter(
-                          (candidate) =>
-                            (!section.partyFilter ||
+                                  (candidate) =>
+                                    (!section.partyFilter ||
                                       candidate.partido ===
                                         section.partyFilter) &&
-                            candidate.nomeUrna
-                              .toLowerCase()
+                                    candidate.nomeUrna
+                                      .toLowerCase()
                                       .includes(
                                         section.candidateSearch.toLowerCase(),
                                       ),
@@ -478,7 +471,7 @@ export default function ElectionResults() {
                           />
                         )}
                       </AutoSizer>
-                          </div>
+                    </div>
                   </TabsContent>
                   <TabsContent value="prefeito">
                     <div className="mb-1">
@@ -507,7 +500,7 @@ export default function ElectionResults() {
                           />
                         )}
                       </AutoSizer>
-                        </div>
+                    </div>
                   </TabsContent>
                 </Tabs>
                 <div className="mt-4">
