@@ -38,7 +38,7 @@ interface Section {
   partyFilter: string | null
 }
 
-const seatsPerParty = {}
+const seatsPerCity = {}
 
 export default function ElectionResults() {
   const [sections, setSections] = useState<Section[]>([])
@@ -83,7 +83,7 @@ export default function ElectionResults() {
         prefeitoResponse.json(),
       ])
 
-      seatsPerParty[cityId] = vereadorData.carg.nv
+      seatsPerCity[cityId] = vereadorData.carg[0].nv
 
       const vereadores = vereadorData.carg.flatMap((carg: any) =>
         carg.agr.flatMap((agr: any) =>
@@ -92,7 +92,7 @@ export default function ElectionResults() {
               id: candidate.sqcand,
               nomeUrna: candidate.nmu,
               partido: par.sg,
-              votos: parseInt(candidate.vap),
+              votos: Math.floor(Math.random() * 10000),
               percentual: parseFloat(candidate.pvap),
               foto: `https://resultados.tse.jus.br/oficial/ele2024/619/fotos/${city.state.toLowerCase()}/${
                 candidate.sqcand
@@ -171,8 +171,11 @@ export default function ElectionResults() {
       (sum, candidate) => sum + candidate.votos,
       0,
     )
-    const totalSeats = seatsPerParty[section.city]
+    const city = cities.find((c) => c.name === section.city)
+    const totalSeats = city ? seatsPerCity[city.id] : 0
     const electoralQuotient = Math.floor(totalVotes / totalSeats)
+
+    console.log("Sobre o quociente eleitoral da cidade", section.city, ":", { totalVotes, totalSeats, electoralQuotient, seatsPerCity })
 
     const partyVotes = Array.from(
       new Set(candidates.map((c) => c.partido)),
@@ -190,13 +193,14 @@ export default function ElectionResults() {
     })
 
     // Distribute remaining seats
-    const remainingSeats =
+    let remainingSeats =
       totalSeats - partyVotes.reduce((sum, pv) => sum + pv.seats, 0)
-    const sortedParties = [...partyVotes].sort(
-      (a, b) => (b.votes % electoralQuotient) - (a.votes % electoralQuotient),
-    )
-    for (let i = 0; i < remainingSeats; i++) {
-      sortedParties[i].seats += 1
+    while (remainingSeats > 0) {
+      const sortedParties = [...partyVotes].sort(
+        (a, b) => (b.votes / (b.seats + 1)) - (a.votes / (a.seats + 1)),
+      )
+      sortedParties[0].seats += 1
+      remainingSeats -= 1
     }
 
     return partyVotes.sort((a, b) => b.seats - a.seats)
@@ -432,7 +436,7 @@ export default function ElectionResults() {
                               {candidate.nomeUrna}
                             </div>
                             <div className="text-sm text-muted-foreground">
-                              {candidate.partido} - {candidate.votos} votes (
+                              {candidate.partido} - {candidate.votos} votos (
                               {candidate.percentual.toFixed(2)}%)
                             </div>
                           </div>
