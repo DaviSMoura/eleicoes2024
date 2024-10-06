@@ -287,7 +287,8 @@ export default function ElectionResults() {
     const candidate = data[index]
     return (
       <div key={key} style={style} className="flex items-center space-x-2 py-2">
-        <img
+        <Image
+          unoptimized
           src={candidate.foto}
           alt={candidate.nomeUrna}
           width={40}
@@ -309,7 +310,8 @@ export default function ElectionResults() {
     <div className="flex flex-col min-h-screen">
       <div className="p-4 py-0 border-b">
         <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6">
-          <img
+          <Image
+            unoptimized
             src="https://upload.wikimedia.org/wikipedia/commons/3/32/Movimento_Brasil_Livre_logo.svg"
             width={100}
             height={100}
