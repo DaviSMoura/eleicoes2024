@@ -52,10 +52,9 @@ export default function ElectionResults() {
   const citySearchInputRef = useRef<HTMLInputElement>(null)
 
   const filteredCities = useMemo(() => {
-    return cities.filter(
-      (city) =>
-        city.name.toLowerCase().includes(citySearch.toLowerCase()) ||
-        city.state.toLowerCase().includes(citySearch.toLowerCase()),
+    return cities.filter((city) =>
+      // city.name.toLowerCase().includes(citySearch.toLowerCase()) ||
+      city.state.toLowerCase().includes(citySearch.toLowerCase()),
     )
   }, [citySearch])
 
@@ -285,8 +284,8 @@ export default function ElectionResults() {
     )
   }
 
-  const handleCitySearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCitySearch(e.target.value)
+  const handleCitySearchChange = (e: string) => {
+    setCitySearch(e)
     if (citySearchInputRef.current) {
       citySearchInputRef.current.focus()
     }
@@ -316,13 +315,20 @@ export default function ElectionResults() {
                 <SelectValue placeholder="Adicionar cidade" />
               </SelectTrigger>
               <SelectContent>
-                <Input
-                  placeholder="Pesquisar cidade..."
-                  value={citySearch}
-                  onChange={handleCitySearchChange}
-                  className="mb-2"
-                  ref={citySearchInputRef}
-                />
+                <Select onValueChange={handleCitySearchChange}>
+                  <SelectTrigger className="w-full my-4">
+                    <SelectValue placeholder="Selecione um estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from(new Set(cities.map((city) => city.state))).map(
+                      (state) => (
+                        <SelectItem key={state} value={state.toLowerCase()}>
+                          {state}
+                        </SelectItem>
+                      ),
+                    )}
+                  </SelectContent>
+                </Select>
                 <VirtualizedList
                   width={300}
                   height={200}
@@ -347,7 +353,7 @@ export default function ElectionResults() {
       )}
       {error && <div className="text-red-500 p-4">{error}</div>}
       <ScrollArea className="flex-1">
-        <div className="flex flex-wrap p-4 gap-4">
+        <div className="flex p-4 space-x-4 md:flex-nowrap sm:flex-wrap">
           {sections.map((section) => (
             <Card
               key={section.id}
