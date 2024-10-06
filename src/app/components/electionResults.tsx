@@ -33,7 +33,10 @@ interface Section {
   state: string
   vereadores: Candidate[]
   prefeitos: Candidate[]
-  percentTotalized: number
+  percentTotalizedVereador: number
+  percentTotalizedPrefeito: number
+  lastUpdateVereador: string
+  lastUpdatePrefeito: string
   candidateSearch: string
   partyFilter: string | null
 }
@@ -92,7 +95,7 @@ export default function ElectionResults() {
               id: candidate.sqcand,
               nomeUrna: candidate.nmu,
               partido: par.sg,
-              votos: parseInt(candidate.vap),//Math.floor(Math.random() * 10000),
+              votos: parseInt(candidate.vap), //Math.floor(Math.random() * 10000),
               percentual: parseFloat(candidate.pvap),
               foto: `https://resultados.tse.jus.br/oficial/ele2024/619/fotos/${city.state.toLowerCase()}/${
                 candidate.sqcand
@@ -119,14 +122,25 @@ export default function ElectionResults() {
         ),
       )
 
-      const percentTotalized = parseFloat(vereadorData.s.pst)
+      const percentTotalizedVereador = parseFloat(vereadorData.s.pst)
+      const percentTotalizedPrefeito = parseFloat(prefeitoData.s.pst)
+      const lastUpdateVereador = `${vereadorData.dg} - ${vereadorData.hg}`
+      const lastUpdatePrefeito = `${prefeitoData.dg} - ${prefeitoData.hg}`
 
       setSections((prevSections) => {
         const existingSection = prevSections.find((s) => s.city === city.name)
         if (existingSection) {
           return prevSections.map((s) =>
             s.id === existingSection.id
-              ? { ...s, vereadores, prefeitos, percentTotalized }
+              ? {
+                  ...s,
+                  vereadores,
+                  prefeitos,
+                  percentTotalizedVereador,
+                  percentTotalizedPrefeito,
+                  lastUpdateVereador,
+                  lastUpdatePrefeito,
+                }
               : s,
           )
         } else {
@@ -138,8 +152,11 @@ export default function ElectionResults() {
               state: city.state,
               vereadores,
               prefeitos,
-              percentTotalized,
+              percentTotalizedVereador,
+              percentTotalizedPrefeito,
               candidateSearch: "",
+              lastUpdateVereador,
+              lastUpdatePrefeito,
               partyFilter: null,
             },
           ]
@@ -175,7 +192,12 @@ export default function ElectionResults() {
     const totalSeats = city ? seatsPerCity[city.id] : 0
     const electoralQuotient = Math.floor(totalVotes / totalSeats)
 
-    console.log("Sobre o quociente eleitoral da cidade", section.city, ":", { totalVotes, totalSeats, electoralQuotient, seatsPerCity })
+    console.log("Sobre o quociente eleitoral da cidade", section.city, ":", {
+      totalVotes,
+      totalSeats,
+      electoralQuotient,
+      seatsPerCity,
+    })
 
     const partyVotes = Array.from(
       new Set(candidates.map((c) => c.partido)),
@@ -197,7 +219,7 @@ export default function ElectionResults() {
       totalSeats - partyVotes.reduce((sum, pv) => sum + pv.seats, 0)
     while (remainingSeats > 0) {
       const sortedParties = [...partyVotes].sort(
-        (a, b) => (b.votes / (b.seats + 1)) - (a.votes / (a.seats + 1)),
+        (a, b) => b.votes / (b.seats + 1) - a.votes / (a.seats + 1),
       )
       sortedParties[0].seats += 1
       remainingSeats -= 1
@@ -327,7 +349,10 @@ export default function ElectionResults() {
       <ScrollArea className="flex-1">
         <div className="flex flex-wrap p-4 gap-4">
           {sections.map((section) => (
-            <Card key={section.id} className="w-full md:w-[400px] flex-shrink-0">
+            <Card
+              key={section.id}
+              className="w-full md:w-[400px] flex-shrink-0"
+            >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-xl md:text-2xl">
                   {section.city} - {section.state}
@@ -341,16 +366,22 @@ export default function ElectionResults() {
                 </Button>
               </CardHeader>
               <CardContent>
-                <div className="mb-4">
-                  <span className="font-semibold">Seções totalizadas: </span>
-                  {section.percentTotalized.toFixed(2)}%
-                </div>
                 <Tabs defaultValue="vereador">
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="vereador">Vereador</TabsTrigger>
                     <TabsTrigger value="prefeito">Prefeito</TabsTrigger>
                   </TabsList>
                   <TabsContent value="vereador">
+                    {" "}
+                    <div className="mb-1">
+                      <span className="font-semibold">
+                        Seções totalizadas:{" "}
+                      </span>
+                      {section.percentTotalizedVereador.toFixed(2)}%
+                    </div>
+                    <span className="font-semibold">Última Atualização: </span>
+                    {section.lastUpdateVereador}
+                    <div className="mb-4"></div>
                     <div className="space-y-2">
                       <Select
                         onValueChange={(value) =>
@@ -418,6 +449,15 @@ export default function ElectionResults() {
                     </ScrollArea>
                   </TabsContent>
                   <TabsContent value="prefeito">
+                    <div className="mb-1">
+                      <span className="font-semibold">
+                        Seções totalizadas:{" "}
+                      </span>
+                      {section.percentTotalizedPrefeito.toFixed(2)}%
+                    </div>
+                    <span className="font-semibold">Última Atualização: </span>
+                    {section.lastUpdatePrefeito}
+                    <div className="mb-4"></div>
                     <ScrollArea className="h-[400px]">
                       {section.prefeitos.map((candidate) => (
                         <div
